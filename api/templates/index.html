@@ -1,0 +1,245 @@
+<HTML>
+    <head>
+    </head>
+
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+            integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+        <!-- JQuery -->
+        <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+
+        <!-- Project Title! -->
+        <title>DeepFace</title>    
+
+        <style>
+
+            .img{
+                width: 300px;
+                height: auto;
+            }
+        </style>
+    </head>
+    <body>
+        <div class = "container">
+            <div class="jumbotron mt-3">
+                 <!-- Proejct Title -->
+                <h1>DeepFace</h1>
+                <!-- Github link and Ainize link -->
+                <A>Git Hub repository : </A> <A href="https://github.com/woomurf/deepface"> https://github.com/woomurf/deepface </A>
+                <br>
+                <A>Testing API : </A> <A href=""> on Ainize </A>
+
+                <hr class="solid">
+                
+                <!-- If your project have a input files -->
+                <h2>Upload </h2>
+                <div id="modeWrapper">
+                    <p>Select mode </p>
+                    <input type="radio" name="mode" value="verify" id ="verify" checked="checked" style="margin-right: 10px; margin-bottom: 10px;">
+                    <label for="VGG_label">Verify</label>
+                    <input type="radio" name="mode" value="analyze" id ="analyze" style="margin-right: 10px; margin-bottom: 10px;">
+                    <label for="VGG_label">Analyze</label><br>
+                </div>
+                <br>
+                <div id="methodWrapper">
+                    <p>Select method </p>
+                    <input type="radio" name="method" value="cosine" id ="cosine" checked="checked" style="margin-right: 10px; margin-bottom: 10px;">
+                    <label for="VGG_label">Cosine</label>
+                    <input type="radio" name="method" value="euclidean" id ="euclidean" style="margin-right: 10px; margin-bottom: 10px;">
+                    <label for="VGG_label">Euclidean</label><br>
+                    <input type="radio" name="method" value="euclidean_l2" id ="euclidean_l2" style="margin-right: 10px; margin-bottom: 10px;">
+                    <label for="VGG_label">Euclidean_l2</label><br>
+                </div>
+                <br>
+                <div id="optionWrapper">
+                    <p>Select model</p>
+                    <input type="radio" name="model" value="VGG-Face" checked="checked" style="margin-right: 10px; margin-bottom: 10px;">
+                    <label for="VGG_label">VGGFace</label><br>
+                    <input type="radio" name="model" value="OpenFace" style="margin-right: 10px; margin-bottom: 10px;">
+                    <label for="VGG_label">OpenFace</label><br>
+                    <input type="radio" name="model" value="Facenet" style="margin-right: 10px; margin-bottom: 10px;">
+                    <label for="VGG_label">Facenet</label><br>
+                    <input type="radio" name="model" value="DeepFace" style="margin-right: 10px; margin-bottom: 10px;">
+                    <label for="VGG_label">FbDeepFace</label><br>
+                    <input type="radio" name="model" value="DeepID" style="margin-right: 10px; margin-bottom: 10px;">
+                    <label for="VGG_label">DeepID</label><br>
+                </div>
+                <br>
+                <div id ="inputImage">
+                    <label for="label1" id="label1">image1 : </label>
+                    <input type='file' id='input1' style="margin-right: 10px; margin-bottom: 10px;">
+                    <label for="label2" id="label2">image2 : </label>
+                    <input type='file' id='input2' style="margin-right: 10px; margin-bottom: 10px;">
+                    <button id="submit" type='submit' class="btn btn-primary btn-lg" style="margin-left: auto;"> RUN </button>
+                </div>
+                
+                <hr class="solid">
+
+                <div id ="preview_box">
+                    <img id="img1" class="img" src="../static/default-image.png">
+                    <img id="img2" class="img" src="../static/default-image.png">
+                    
+                </div>
+                
+                <!-- Result Box -->
+                <div id ='resultBox' style="margin-left: auto; margin-right: auto;">
+                    <p id='errorbox'></p>
+                    <p id='result'></p>
+                </div>
+
+                <!-- onclick function if you want you can delete this -->
+                <script>
+                    document.getElementById("submit").onclick = async () => {
+                        var mode = $("input:radio[name='mode']:checked").val();
+                        var data;
+
+                        if(mode == "verify"){
+                            data = await get_verify_data();
+                        }
+                        else{
+                            data = await get_analyze_data();
+                        }
+                        
+                        if(data == null)
+                            return null;
+
+                        var url = "/" + mode;
+
+                        var myHeaders = new Headers();
+                        myHeaders.append("Content-Type", "application/json");
+                        
+                        fetch(
+                            url,
+                            {
+                                method: 'POST',
+                                headers: myHeaders,
+                                body: JSON.stringify(data),
+                                redirect: "follow"
+                            }
+                        )
+                        .then(response => {
+                            if (response.status == 200){
+                                return response
+                            }
+                            else{
+                                throw Error(response)
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(response => {
+                            var result = JSON.stringify(response, undefined, 4)
+                            document.getElementById('result').innerHTML = result;
+                            document.getElementById('errorbox').innerHTML = "";
+                        })
+                        .catch(e => {
+                            document.getElementById('errorbox').innerHTML = e['error'];
+                        })
+                        
+                    }
+
+                    document.getElementById("verify").onclick = () => {
+                        var optionWrapper = document.getElementById("optionWrapper"); 
+                        optionWrapper.style.display = "block";
+                        var methodWrapper = document.getElementById("methodWrapper");
+                        methodWrapper.style.display = "block";
+                        var input2 = document.getElementById("input2");
+                        input2.style.display = "inline";
+                        var label2 = document.getElementById("label2");
+                        label2.style.display = "inline-block";
+                        var img2 = document.getElementById("img2");
+                        img2.style.display = "inline";
+                    }
+
+                    document.getElementById("analyze").onclick = () => {
+                        var optionWrapper = document.getElementById("optionWrapper");
+                        optionWrapper.style.display = "none";
+                        var methodWrapper = document.getElementById("methodWrapper");
+                        methodWrapper.style.display = "none";
+                        var input2 = document.getElementById("input2");
+                        input2.style.display = "none";
+                        var label2 = document.getElementById("label2");
+                        label2.style.display = "none";
+                        var img2 = document.getElementById("img2");
+                        img2.style.display = "none";
+                    }
+                    
+                    document.getElementById("input1").onchange = (event) =>  {
+                        var img1 = document.getElementById('img1');
+                        img1.src = URL.createObjectURL(event.target.files[0]);
+                        img1.onload = function() {
+                            URL.revokeObjectURL(img1.src) // free memory
+                        }
+                    };
+
+                    document.getElementById("input2").onchange = (event) =>  {
+                        var img2 = document.getElementById('img2');
+                        img2.src = URL.createObjectURL(event.target.files[0]);
+                        img2.onload = function() {
+                            URL.revokeObjectURL(img2.src) // free memory
+                        }
+                    };
+
+                    async function get_verify_data(){
+                        var model = $("input:radio[name='model']:checked").val();
+                        var method = $("input:radio[name='method']:checked").val();
+
+                        var input1 = document.getElementById("input1").files[0];
+                        var input2 = document.getElementById("input2").files[0];
+                        
+                        if (input1 == null || input2 == null)
+                            return null;
+
+
+                        var base64_img1 = await getBase64(input1);
+                        var base64_img2 = await getBase64(input2);
+
+                        var data = {
+                            "model_name": model, 
+                            "distance_metric": method,
+                            "img": [
+                                {
+                                "img1": base64_img1,
+                                "img2": base64_img2
+                                }   
+                            ]
+                        }
+                        
+                        return data;
+                    }
+
+                    async function get_analyze_data(){
+                        var input1 = document.getElementById("input1").files[0];
+                        var base64_img = await getBase64(input1);
+
+                        var data = {
+                            "img": [
+                                base64_img,
+                            ]
+                        }
+
+                        return data
+                    }
+
+                    async function getBase64(file) {
+                        var base64URL = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.readAsDataURL(file);
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = error => reject(error);
+                        });
+                        
+                        return base64URL;
+                    }
+
+                </script>
+            </div>
+        </div>
+    </body>
+</HTML>
+
+

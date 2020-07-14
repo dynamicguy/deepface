@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, make_response
+from flask import Flask, jsonify, request, make_response, render_template
 
 import argparse
 import uuid
@@ -6,7 +6,7 @@ import json
 import time
 from tqdm import tqdm
 
-import tensorflow as tf
+from tensorflow.python.framework import ops
 
 from deepface import DeepFace
 from deepface.basemodels import VGGFace, OpenFace, Facenet, FbDeepFace, DeepID
@@ -83,14 +83,14 @@ print("Facial attribute analysis models are built in ", toc-tic," seconds")
 
 #------------------------------
 
-graph = tf.get_default_graph()
+graph = ops.get_default_graph()
 
 #------------------------------
 #Service API Interface
 
 @app.route('/')
 def index():
-	return '<h1>Hello, world!</h1>'
+	return render_template('index.html')
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
@@ -135,14 +135,14 @@ def analyze():
 	resp_obj["trx_id"] = trx_id
 	resp_obj["seconds"] = toc-tic
 
-	return resp_obj, 200
+	return jsonify(resp_obj), 200
 
 @app.route('/verify', methods=['POST'])
 
 def verify():
 	
 	global graph
-	
+
 	tic = time.time()
 	req = request.get_json()
 	trx_id = uuid.uuid4()
@@ -152,6 +152,7 @@ def verify():
 	with graph.as_default():
 		
 		model_name = "VGG-Face"; distance_metric = "cosine"
+
 		if "model_name" in list(req.keys()):
 			model_name = req["model_name"]
 		if "distance_metric" in list(req.keys()):
@@ -219,7 +220,7 @@ def verify():
 	resp_obj["trx_id"] = trx_id
 	resp_obj["seconds"] = toc-tic
 	
-	return resp_obj, 200
+	return jsonify(resp_obj), 200
 
 
 if __name__ == '__main__':
