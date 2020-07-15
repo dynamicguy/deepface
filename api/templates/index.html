@@ -9,9 +9,24 @@
         <!-- Bootstrap CSS -->
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
             integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-
+        
         <!-- JQuery -->
         <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+
+        <!-- Bootstrap js -->
+        <script src=https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js></script>
+
+        <!-- Chart -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
+
+        <!-- JQuery -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <!-- Bootstrap tooltips -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
+        <!-- Bootstrap core JavaScript -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js"></script>
+        <!-- MDB core JavaScript -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/js/mdb.min.js"></script>
 
         <!-- Project Title! -->
         <title>DeepFace</title>    
@@ -22,6 +37,12 @@
                 width: 300px;
                 height: auto;
             }
+
+            .chart{
+                width: 400px;
+                display: inline-block;
+            }
+
         </style>
     </head>
     <body>
@@ -89,7 +110,15 @@
                 <!-- Result Box -->
                 <div id ='resultBox' style="margin-left: auto; margin-right: auto;">
                     <p id='errorbox'></p>
-                    <p id='result'></p>
+                    <pre id='result'></pre>
+                    <div class="chart">
+                        <canvas id="raceChart"></canvas>
+                    </div>
+                    <div class="chart">
+                        <canvas class="chart" id="emotionChart"></canvas>
+                    </div>
+                    
+                    
                 </div>
 
                 <!-- onclick function if you want you can delete this -->
@@ -234,6 +263,53 @@
                         });
                         
                         return base64URL;
+                    }
+
+                    function drawChart(name){
+                        var ctxP = document.getElementById(name).getContext('2d');
+                        var myPieChart = new Chart(ctxP, {
+                        plugins: [ChartDataLabels],
+                        type: 'pie',
+                        data: {
+                            labels: ["Red", "Green", "Yellow", "Grey", "Dark Grey"],
+                            datasets: [{
+                            data: [210, 130, 120, 160, 120],
+                            backgroundColor: ["#F7464A", "#46BFBD", "#FDB45C", "#949FB1", "#4D5360"],
+                            hoverBackgroundColor: ["#FF5A5E", "#5AD3D1", "#FFC870", "#A8B3C5", "#616774"]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 20,
+                                boxWidth: 10
+                            }
+                            },
+                            plugins: {
+                            datalabels: {
+                                formatter: (value, ctx) => {
+                                let sum = 0;
+                                let dataArr = ctx.chart.data.datasets[0].data;
+                                dataArr.map(data => {
+                                    sum += data;
+                                });
+                                let percentage = (value * 100 / sum).toFixed(2) + "%";
+                                return percentage;
+                                },
+                                color: 'white',
+                                labels: {
+                                title: {
+                                    font: {
+                                    size: '16'
+                                    }
+                                }
+                                }
+                            }
+                            }
+                        }
+                        });
                     }
 
                 </script>
