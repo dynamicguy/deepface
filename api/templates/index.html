@@ -39,8 +39,37 @@
             }
 
             .chart{
-                width: 400px;
+                width: 49%;
+                height: auto;
                 display: inline-block;
+            }
+
+            .result{
+                display: none;
+            }
+
+            #loader {
+                z-index: 1;
+                width: 40px;
+                height: 40px;
+                /* margin: 30px 0px 0px 50px; */
+                border-top:20px;
+                border: 6px solid #f3f3f3;
+                border-radius: 50%;
+                border-top: 6px solid #3498db;
+                vertical-align:middle;
+                -webkit-animation: spin 3s linear infinite;
+                animation: spin 2s linear infinite;
+                }
+
+            @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+            }
+
+            @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
             }
 
         </style>
@@ -55,6 +84,7 @@
                 <br>
                 <A>Testing API : </A> <A href=""> on Ainize </A>
 
+                <p><span>Notice! If the face color and surrounding color are similar, the face may not be detected.</span></p>
                 <hr class="solid">
                 
                 <!-- If your project have a input files -->
@@ -70,11 +100,11 @@
                 <div id="methodWrapper">
                     <p>Select method </p>
                     <input type="radio" name="method" value="cosine" id ="cosine" checked="checked" style="margin-right: 10px; margin-bottom: 10px;">
-                    <label for="VGG_label">Cosine</label>
+                    <label for="VGG_label">Cosine </label>
                     <input type="radio" name="method" value="euclidean" id ="euclidean" style="margin-right: 10px; margin-bottom: 10px;">
-                    <label for="VGG_label">Euclidean</label><br>
+                    <label for="VGG_label">Euclidean </label>
                     <input type="radio" name="method" value="euclidean_l2" id ="euclidean_l2" style="margin-right: 10px; margin-bottom: 10px;">
-                    <label for="VGG_label">Euclidean_l2</label><br>
+                    <label for="VGG_label">Euclidean_l2 </label>
                 </div>
                 <br>
                 <div id="optionWrapper">
@@ -92,12 +122,21 @@
                 </div>
                 <br>
                 <div id ="inputImage">
-                    <label for="label1" id="label1">image1 : </label>
-                    <input type='file' id='input1' style="margin-right: 10px; margin-bottom: 10px;">
-                    <label for="label2" id="label2">image2 : </label>
-                    <input type='file' id='input2' style="margin-right: 10px; margin-bottom: 10px;">
-                    <button id="submit" type='submit' class="btn btn-primary btn-lg" style="margin-left: auto;"> RUN </button>
+                    <div>
+                        <label for="label1" id="label1">image1 : </label>
+                        <input type='file' id='input1' style="margin-right: 10px; margin-bottom: 10px;">
+                    </div>
+                    <div>
+                        <label for="label2" id="label2">image2 : </label>
+                        <input type='file' id='input2' style="margin-right: 10px; margin-bottom: 10px;">
+                    </div>
                 </div>
+                <div>
+                    <button id="submit" type='submit' class="btn btn-primary btn-lg" style="margin-left: auto;"> RUN </button>
+                    <div id = "loader" style="display: none;"></div>
+                    <div id="second" style="display: inline-block;"></div>
+                </div>
+                   
                 
                 <hr class="solid">
 
@@ -110,13 +149,24 @@
                 <!-- Result Box -->
                 <div id ='resultBox' style="margin-left: auto; margin-right: auto;">
                     <p id='errorbox'></p>
-                    <pre id='result'></pre>
-                    <div class="chart">
-                        <canvas id="raceChart"></canvas>
+                    <div id="verifyResult" class="result">
+                        <p id="isVerify"></p>
+                        <p id="distance"></p>
+                        <p id="threshold"></p>
                     </div>
-                    <div class="chart">
-                        <canvas class="chart" id="emotionChart"></canvas>
+                    <div id="analyzeResult" class="result">
+                        <p id="age"></p>
+                        <p id="gender"></p>
+                        <p id="race"></p>
+                        <p id="emotion"></p>
+                        <div class="chart">
+                            <canvas id="raceChart"></canvas>
+                        </div>
+                        <div class="chart">
+                            <canvas class="chart" id="emotionChart"></canvas>
+                        </div>
                     </div>
+                    
                     
                     
                 </div>
@@ -124,6 +174,7 @@
                 <!-- onclick function if you want you can delete this -->
                 <script>
                     document.getElementById("submit").onclick = async () => {
+                        waiting();
                         var mode = $("input:radio[name='mode']:checked").val();
                         var data;
 
@@ -161,12 +212,26 @@
                         })
                         .then(response => response.json())
                         .then(response => {
-                            var result = JSON.stringify(response, undefined, 4)
-                            document.getElementById('result').innerHTML = result;
+                            stopWaiting();
+                            var second = document.getElementById("second");
+                            second.innerHTML = response["seconds"].toFixed(2);
+                            if(mode == "verify"){
+                                viewVerityResult(response["pair_1"]);
+                            }
+                            else{
+                                viewAnalyzeResult(response["instance_1"]);
+                            }
+                            
                             document.getElementById('errorbox').innerHTML = "";
                         })
                         .catch(e => {
-                            document.getElementById('errorbox').innerHTML = e['error'];
+                            stopWaiting();
+
+                            document.getElementById('errorbox').innerHTML = error['error'];
+                            var results = document.getElementsByClassName('result');
+                            for(result in results){
+                                result.style.display = "none";
+                            }
                         })
                         
                     }
@@ -265,23 +330,85 @@
                         return base64URL;
                     }
 
-                    function drawChart(name){
+                    function viewVerityResult(response){
+                        var analyzeBox = document.getElementById("analyzeResult");
+                        var verifyBox = document.getElementById("verifyResult");
+                        var isVerify = document.getElementById("isVerify");
+                        var distance = document.getElementById("distance");
+                        var threshold = document.getElementById("threshold");
+
+                        analyzeBox.style.display = "none";
+                        verifyBox.style.display = "block";
+                        isVerify.innerHTML = "Result : " + response["verified"];
+
+                        var r_distance = response["distance"]
+                        var r_threshold = response["threshold"]
+
+
+
+                        distance.innerHTML = "Similarity : " + String(1-response["distance"].toFixed(5));
+                        threshold.innerHTML = "Threshold : " + String(1-response["max_threshold_to_verify"]);
+                    }
+
+                    function viewAnalyzeResult(response){
+
+                        var analyzeBox = document.getElementById("analyzeResult");
+                        var verifyBox = document.getElementById("verifyResult");
+                        var age = document.getElementById("age");
+                        var dominant_race = document.getElementById("race");
+                        var dominant_emotion = document.getElementById("emotion");
+                        var gender = document.getElementById("gender");
+
+                        analyzeBox.style.display = "block";
+                        verifyBox.style.display = "none";
+                        age.innerHTML = "Age : " + response["age"].toFixed(0);
+                        dominant_race.innerHTML = "Race : " + response["dominant_race"];
+                        dominant_emotion.innerHTML = "Emotion : " + response["dominant_emotion"];
+                        gender.innerHTML = "Gender : " + response["gender"];
+
+                        drawChart(response["race"], "raceChart");
+                        drawChart(response["emotion"], "emotionChart");
+                    }
+
+                    function drawChart(json_data, name){
+                        var labels = [];
+                        var data = [];
+                        
+                        for(var key in json_data){
+                            labels.push(key);
+                            data.push(json_data[key].toFixed(2));
+                        }
+
+                        var colorSet = getColorSet(labels.length);
+
+                        makeChart(name, labels, data, colorSet[0], colorSet[1]);
+                    }
+
+                    function getColorSet(num){
+                        var colorSet = ["#F94144", "#F3722C", "#F8961E", "#F9C74F", "#90BE6D", "#43AA8B", "#577590"];
+                        var hoverColorSet = ["#FA6163", "#F47E3E", "#F9A339", "#F9CC62", "#9FC680", "#50B99A", "#6687A3"];
+
+                        return [colorSet.slice(0,num), hoverColorSet.slice(0,num)];
+                    }
+
+                    function makeChart(name, key, values, colorSet, hoverColorSet){
+
                         var ctxP = document.getElementById(name).getContext('2d');
                         var myPieChart = new Chart(ctxP, {
                         plugins: [ChartDataLabels],
                         type: 'pie',
                         data: {
-                            labels: ["Red", "Green", "Yellow", "Grey", "Dark Grey"],
+                            labels: key,
                             datasets: [{
-                            data: [210, 130, 120, 160, 120],
-                            backgroundColor: ["#F7464A", "#46BFBD", "#FDB45C", "#949FB1", "#4D5360"],
-                            hoverBackgroundColor: ["#FF5A5E", "#5AD3D1", "#FFC870", "#A8B3C5", "#616774"]
+                            data: values,
+                            backgroundColor: colorSet,
+                            hoverBackgroundColor: hoverColorSet
                             }]
                         },
                         options: {
                             responsive: true,
                             legend: {
-                            position: 'right',
+                            position: 'bottom',
                             labels: {
                                 padding: 20,
                                 boxWidth: 10
@@ -295,14 +422,19 @@
                                 dataArr.map(data => {
                                     sum += data;
                                 });
-                                let percentage = (value * 100 / sum).toFixed(2) + "%";
-                                return percentage;
+                                let percentage = (value * 100 / sum).toFixed(2);
+                                if (percentage > 5.0){
+                                    return percentage + "%";
+                                }
+                                else{
+                                    return null;
+                                }
                                 },
                                 color: 'white',
                                 labels: {
                                 title: {
                                     font: {
-                                    size: '16'
+                                    size: '10'
                                     }
                                 }
                                 }
@@ -312,6 +444,16 @@
                         });
                     }
 
+                    function waiting(){
+                        var spining = document.getElementById("loader");
+                        spining.style.display = 'inline-block';
+
+                    }
+
+                    function stopWaiting(){
+                        var spining = document.getElementById("loader");
+                        spining.style.display = "none";
+                    }
                 </script>
             </div>
         </div>

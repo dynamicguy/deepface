@@ -9,4 +9,6 @@ EXPOSE 5000
 
 COPY . .
 
+CMD ["python","api/api.py"]
+
 

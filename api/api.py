@@ -126,9 +126,12 @@ def analyze():
 		#---------------------------
 
 		#resp_obj = DeepFace.analyze(instances, actions=actions)
-		resp_obj = DeepFace.analyze(instances, actions=actions, models=facial_attribute_models)
+		resp_obj,msg = DeepFace.analyze(instances, actions=actions, models=facial_attribute_models)
 		
 		#---------------------------
+
+	if resp_obj is False:
+		return jsonify(msg), 500
 
 	toc = time.time()
 
@@ -192,15 +195,15 @@ def verify():
 		#--------------------------
 		
 		if model_name == "VGG-Face":
-			resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = vggface_model)
+			resp_obj,msg = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = vggface_model)
 		elif model_name == "Facenet":
-			resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = facenet_model)
+			resp_obj,msg = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = facenet_model)
 		elif model_name == "OpenFace":
-			resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = openface_model)
+			resp_obj,msg = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = openface_model)
 		elif model_name == "DeepFace":
-			resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = deepface_model)
+			resp_obj,msg = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = deepface_model)
 		elif model_name == "DeepID":
-			resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = deepid_model)
+			resp_obj,msg = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = deepid_model)
 		elif model_name == "Ensemble":
 			models =  {}
 			models["VGG-Face"] = vggface_model
@@ -215,6 +218,9 @@ def verify():
 		
 	#--------------------------
 	
+	if resp_obj is False:
+		return jsonify(msg), 500
+
 	toc =  time.time()
 	
 	resp_obj["trx_id"] = trx_id
@@ -228,7 +234,7 @@ if __name__ == '__main__':
 	parser.add_argument(
 		'-p', '--port',
 		type=int,
-		default=5000,
+		default=80,
 		help='Port of serving api')
 	args = parser.parse_args()
 	app.run(host='0.0.0.0', port=args.port)
