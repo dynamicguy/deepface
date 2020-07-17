@@ -228,6 +228,9 @@ def verify():
 	
 	return jsonify(resp_obj), 200
 
+@app.route('/healthz', methods=['GET'])
+def checkHealth():
+	return 200
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
