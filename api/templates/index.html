@@ -71,7 +71,14 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
             }
-
+            
+            @media (max-width: 767px){
+                .chart{
+                    width: auto;
+                    height: auto;
+                    display: block;
+                }
+            }
         </style>
     </head>
     <body>
@@ -83,41 +90,48 @@
                 <A>Git Hub repository : </A> <A href="https://github.com/woomurf/deepface"> https://github.com/woomurf/deepface </A>
                 <br>
                 <A>Testing API : </A> <A href=""> on Ainize </A>
-
-                <p><span>Notice! If the face color and surrounding color are similar, the face may not be detected.</span></p>
+                <br>
+                <h3>Notice!</h3>
+                <p><b>If the face color and surrounding color are similar, the face may not be detected.
+                    The program can detect only one person per image.
+                </b></p>
+                <p><b></b></p>
                 <hr class="solid">
                 
                 <!-- If your project have a input files -->
                 <h2>Upload </h2>
                 <div id="modeWrapper">
                     <p>Select mode </p>
-                    <input type="radio" name="mode" value="verify" id ="verify" checked="checked" style="margin-right: 10px; margin-bottom: 10px;">
+                    <input type="radio" name="mode" value="verify" id ="verify" checked="checked" style="margin-right: 5px; margin-bottom: 10px;">
                     <label for="VGG_label">Verify</label>
-                    <input type="radio" name="mode" value="analyze" id ="analyze" style="margin-right: 10px; margin-bottom: 10px;">
+                    <input type="radio" name="mode" value="analyze" id ="analyze" style="margin-right: 5px; margin-left: 10px; margin-bottom: 10px;">
                     <label for="VGG_label">Analyze</label><br>
                 </div>
                 <br>
+
+                <!-- Select Method -->
                 <div id="methodWrapper">
                     <p>Select method </p>
-                    <input type="radio" name="method" value="cosine" id ="cosine" checked="checked" style="margin-right: 10px; margin-bottom: 10px;">
+                    <input type="radio" name="method" value="cosine" id ="cosine" checked="checked" style="margin-right: 5px;">
                     <label for="VGG_label">Cosine </label>
-                    <input type="radio" name="method" value="euclidean" id ="euclidean" style="margin-right: 10px; margin-bottom: 10px;">
+                    <input type="radio" name="method" value="euclidean" id ="euclidean" style="margin-left: 10px; margin-right: 5px;">
                     <label for="VGG_label">Euclidean </label>
-                    <input type="radio" name="method" value="euclidean_l2" id ="euclidean_l2" style="margin-right: 10px; margin-bottom: 10px;">
+                    <input type="radio" name="method" value="euclidean_l2" id ="euclidean_l2" style="margin-left: 10px; margin-right: 5px;">
                     <label for="VGG_label">Euclidean_l2 </label>
                 </div>
                 <br>
+                <!-- Select Model -->
                 <div id="optionWrapper">
                     <p>Select model</p>
-                    <input type="radio" name="model" value="VGG-Face" checked="checked" style="margin-right: 10px; margin-bottom: 10px;">
+                    <input type="radio" name="model" value="VGG-Face" checked="checked" style="margin-right: 5px; margin-bottom: 10px;">
                     <label for="VGG_label">VGGFace</label><br>
-                    <input type="radio" name="model" value="OpenFace" style="margin-right: 10px; margin-bottom: 10px;">
+                    <input type="radio" name="model" value="OpenFace" style="margin-right: 5px; margin-bottom: 10px;">
                     <label for="VGG_label">OpenFace</label><br>
-                    <input type="radio" name="model" value="Facenet" style="margin-right: 10px; margin-bottom: 10px;">
+                    <input type="radio" name="model" value="Facenet" style="margin-right: 5px; margin-bottom: 10px;">
                     <label for="VGG_label">Facenet</label><br>
-                    <input type="radio" name="model" value="DeepFace" style="margin-right: 10px; margin-bottom: 10px;">
+                    <input type="radio" name="model" value="DeepFace" style="margin-right: 5px; margin-bottom: 10px;">
                     <label for="VGG_label">FbDeepFace</label><br>
-                    <input type="radio" name="model" value="DeepID" style="margin-right: 10px; margin-bottom: 10px;">
+                    <input type="radio" name="model" value="DeepID" style="margin-right: 5px; margin-bottom: 10px;">
                     <label for="VGG_label">DeepID</label><br>
                 </div>
                 <br>
@@ -159,22 +173,25 @@
                         <p id="gender"></p>
                         <p id="race"></p>
                         <p id="emotion"></p>
-                        <div class="chart">
+                        <div class="chart" id="raceChartWrapper">
                             <canvas id="raceChart"></canvas>
                         </div>
-                        <div class="chart">
-                            <canvas class="chart" id="emotionChart"></canvas>
+                        <div class="chart" id="emotionChartWrapper">
+                            <canvas id="emotionChart"></canvas>
                         </div>
                     </div>
-                    
-                    
-                    
                 </div>
 
                 <!-- onclick function if you want you can delete this -->
                 <script>
                     document.getElementById("submit").onclick = async () => {
+                        
+                        var second = document.getElementById("second");
+                        second.innerHTML = "";
                         waiting();
+                        cleanResult();
+                        
+
                         var mode = $("input:radio[name='mode']:checked").val();
                         var data;
 
@@ -185,9 +202,10 @@
                             data = await get_analyze_data();
                         }
                         
-                        if(data == null)
+                        if(data == null){
+                            stopWaiting();
                             return null;
-
+                        }
                         var url = "/" + mode;
 
                         var myHeaders = new Headers();
@@ -206,15 +224,15 @@
                             if (response.status == 200){
                                 return response
                             }
-                            else{
+                            else if(response.status == 500){
+                                document.getElementById("errorbox").innerHTML = "Error: Face could not be detection."
                                 throw Error(response)
                             }
                         })
                         .then(response => response.json())
                         .then(response => {
                             stopWaiting();
-                            var second = document.getElementById("second");
-                            second.innerHTML = response["seconds"].toFixed(2);
+                            second.innerHTML = "&nbsp;&nbsp; Taked time : " + response["seconds"].toFixed(2) + "s";
                             if(mode == "verify"){
                                 viewVerityResult(response["pair_1"]);
                             }
@@ -225,15 +243,26 @@
                             document.getElementById('errorbox').innerHTML = "";
                         })
                         .catch(e => {
+                            // document.getElementById("errorbox").innerHTML = error['error'];
                             stopWaiting();
-
-                            document.getElementById('errorbox').innerHTML = error['error'];
-                            var results = document.getElementsByClassName('result');
-                            for(result in results){
-                                result.style.display = "none";
-                            }
+                            cleanResult();
                         })
-                        
+                    }
+
+                    function cleanResult(){
+                        var verifyResult = document.getElementById("verifyResult");
+                        var analyzeResult = document.getElementById("analyzeResult");
+                        verifyResult.style.display = "none";
+                        analyzeResult.style.display = "none";
+
+                        var raceChart = document.getElementById("raceChart");
+                        var emotionChart = document.getElementById("emotionChart");
+                        raceChart.remove();
+                        emotionChart.remove();
+
+                        $('#raceChartWrapper').append('<canvas id="raceChart"></canvas>')
+                        $('#emotionChartWrapper').append('<canvas id="emotionChart"></canvas>')
+
                     }
 
                     document.getElementById("verify").onclick = () => {
@@ -285,7 +314,8 @@
                         var input1 = document.getElementById("input1").files[0];
                         var input2 = document.getElementById("input2").files[0];
                         
-                        if (input1 == null || input2 == null)
+                        if (input1 == undefined || input2 == undefined)
+                            document.getElementById("errorbox").innerHTML = "Please input image"
                             return null;
 
 
@@ -302,14 +332,18 @@
                                 }   
                             ]
                         }
-                        
+
                         return data;
                     }
 
                     async function get_analyze_data(){
                         var input1 = document.getElementById("input1").files[0];
+                        if (input1 == undefined){
+                            document.getElementById("errorbox").innerHTML = "Please input image"
+                            return null;
+                        }
                         var base64_img = await getBase64(input1);
-
+                    
                         var data = {
                             "img": [
                                 base64_img,
@@ -340,14 +374,8 @@
                         analyzeBox.style.display = "none";
                         verifyBox.style.display = "block";
                         isVerify.innerHTML = "Result : " + response["verified"];
-
-                        var r_distance = response["distance"]
-                        var r_threshold = response["threshold"]
-
-
-
-                        distance.innerHTML = "Similarity : " + String(1-response["distance"].toFixed(5));
-                        threshold.innerHTML = "Threshold : " + String(1-response["max_threshold_to_verify"]);
+                        distance.innerHTML = "Distance : " + response["distance"].toFixed(5);
+                        threshold.innerHTML = "Threshold : " + response["max_threshold_to_verify"].toFixed(5);
                     }
 
                     function viewAnalyzeResult(response){
@@ -419,10 +447,8 @@
                                 formatter: (value, ctx) => {
                                 let sum = 0;
                                 let dataArr = ctx.chart.data.datasets[0].data;
-                                dataArr.map(data => {
-                                    sum += data;
-                                });
-                                let percentage = (value * 100 / sum).toFixed(2);
+                               
+                                let percentage = parseFloat(value).toFixed(2);
                                 if (percentage > 5.0){
                                     return percentage + "%";
                                 }
@@ -447,12 +473,15 @@
                     function waiting(){
                         var spining = document.getElementById("loader");
                         spining.style.display = 'inline-block';
-
+                        var runButton = document.getElementById("submit");
+                        runButton.disabled = "disabled";
                     }
 
                     function stopWaiting(){
                         var spining = document.getElementById("loader");
                         spining.style.display = "none";
+                        var runButton = document.getElementById("submit");
+                        runButton.disabled = false;
                     }
                 </script>
             </div>
