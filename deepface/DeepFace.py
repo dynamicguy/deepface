@@ -107,7 +107,7 @@ def verify(img1_path, img2_path=''
 						img1 = functions.detectFace(img1_path, input_shape, enforce_detection = enforce_detection)
 						img2 = functions.detectFace(img2_path, input_shape, enforce_detection = enforce_detection)
 					except:
-						return False, {"error": "Face could not be detected"}
+						return {"error": "Face could not be detected"}
 
 					img1_representation = custom_model.predict(img1)[0,:]
 					img2_representation = custom_model.predict(img2)[0,:]
@@ -413,7 +413,7 @@ def analyze(img_path, actions = [], models = {}, enforce_detection = True):
 				try:
 					img = functions.detectFace(img_path, target_size = (48, 48), grayscale = True, enforce_detection = enforce_detection)
 				except:
-					return False, {"error": "Face could not be detected"}
+					return {"error": "Face could not be detected"}
 					
 				emotion_predictions = emotion_model.predict(img)[0,:]
 
