@@ -42,6 +42,7 @@
                 width: 49%;
                 height: auto;
                 display: inline-block;
+                text-align: center;
             }
 
             .result{
@@ -185,9 +186,11 @@
                         <p id="race"></p>
                         <p id="emotion"></p>
                         <div class="chart" id="raceChartWrapper">
+                            <p>Race</p>
                             <canvas id="raceChart"></canvas>
                         </div>
                         <div class="chart" id="emotionChartWrapper">
+                            <p>Emotion</p>
                             <canvas id="emotionChart"></canvas>
                         </div>
                     </div>
@@ -446,10 +449,6 @@
                             }]
                         },
                         options: {
-                            title: {
-                                display: true,
-                                text: name
-                            },
                             responsive: true,
                             legend: {
                             position: 'bottom',
