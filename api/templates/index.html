@@ -198,9 +198,12 @@
 
                         if(mode == "verify"){
                             data = await get_verify_data();
+                            console.log(data);
                         }
                         else{
                             data = await get_analyze_data();
+                            console.log(data);
+                            
                         }
                         
                         if(data == null){
@@ -315,9 +318,10 @@
                         var input1 = document.getElementById("input1").files[0];
                         var input2 = document.getElementById("input2").files[0];
                         
-                        if (input1 == undefined || input2 == undefined)
+                        if (input1 == undefined || input2 == undefined){
                             document.getElementById("errorbox").innerHTML = "Please input image"
                             return null;
+                        }
 
 
                         var base64_img1 = await getBase64(input1);

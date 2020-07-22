@@ -6,6 +6,7 @@ RUN add-apt-repository ppa:deadsnakes/ppa -y
 RUN apt-get update
 RUN apt-get install -y python3.6 
 RUN apt install -y python3-pip
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 RUN python3 get-pip.py --force-reinstall
 RUN pip install deepface
@@ -16,6 +17,6 @@ EXPOSE 80
 
 COPY . .
 
-CMD "bash"
+CMD ["python","api/api.py"]
 
 
