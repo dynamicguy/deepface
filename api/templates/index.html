@@ -208,12 +208,9 @@
 
                         if(mode == "verify"){
                             data = await get_verify_data();
-                            console.log(data);
                         }
                         else{
                             data = await get_analyze_data();
-                            console.log(data);
-                            
                         }
                         
                         if(data == null){
@@ -451,7 +448,6 @@
                         options: {
                             title: {
                                 display: true,
-                                position: top,
                                 text: name
                             },
                             responsive: true,
