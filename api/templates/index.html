@@ -103,8 +103,15 @@
                 
                 <!-- If your project have a input files -->
                 <h2>Upload </h2>
+                <div id="sampleBox" style="margin-bottom: 5px;">
+                    <p style="display:inline">Sample : </p>
+                    <a href="../static/sample1.png" target="blank">Sample Image1</a>
+                    &nbsp;&nbsp;&nbsp;
+                    <a href="../static/sample2.png" target="blank">Sample Image2</a>
+                </div>
+
                 <div id="modeWrapper">
-                    <p>Select mode </p>
+                    <p><b>Select mode</b> </p>
                     <input type="radio" name="mode" value="verify" id ="verify" checked="checked" style="margin-right: 5px; margin-bottom: 10px;">
                     <label for="VGG_label">Verify</label>
                     <input type="radio" name="mode" value="analyze" id ="analyze" style="margin-right: 5px; margin-left: 10px; margin-bottom: 10px;">
@@ -114,7 +121,7 @@
 
                 <!-- Select Method -->
                 <div id="methodWrapper">
-                    <p>Select method </p>
+                    <p><b>Select method</b> </p>
                     <input type="radio" name="method" value="cosine" id ="cosine" checked="checked" style="margin-right: 5px;">
                     <label for="VGG_label">Cosine </label>
                     <input type="radio" name="method" value="euclidean" id ="euclidean" style="margin-left: 10px; margin-right: 5px;">
@@ -125,7 +132,7 @@
                 <br>
                 <!-- Select Model -->
                 <div id="optionWrapper">
-                    <p>Select model</p>
+                    <p><b>Select model</b></p>
                     <input type="radio" name="model" value="VGG-Face" checked="checked" style="margin-right: 5px; margin-bottom: 10px;">
                     <label for="VGG_label">VGGFace</label><br>
                     <input type="radio" name="model" value="OpenFace" style="margin-right: 5px; margin-bottom: 10px;">
@@ -138,6 +145,7 @@
                     <label for="VGG_label">DeepID</label><br>
                 </div>
                 <br>
+                
                 <div id ="inputImage">
                     <div>
                         <label for="label1" id="label1">image1 : </label>
@@ -441,6 +449,11 @@
                             }]
                         },
                         options: {
+                            title: {
+                                display: true,
+                                position: top,
+                                text: name
+                            },
                             responsive: true,
                             legend: {
                             position: 'bottom',
@@ -482,6 +495,8 @@
                         spining.style.display = 'inline-block';
                         var runButton = document.getElementById("submit");
                         runButton.disabled = "disabled";
+                        var errorbox = document.getElementById("errorbox");
+                        errorbox.innerHTML = "";
                     }
 
                     function stopWaiting(){
