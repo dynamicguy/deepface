@@ -17,3 +17,4 @@ deepface/subsidiarymodels/__pycache__/*
 tests/dataset/*.pkl
 
 api/static/.DS_Store
+deepface/weights/*
