@@ -17,6 +17,10 @@ EXPOSE 80
 
 COPY . .
 
+RUN mkdir /root/.deepface 
+RUN mkdir /root/.deepface/weights
+RUN mv deepface/weights/* /root/.deepface/weights/
+
 CMD ["python","api/api.py"]
 
 
