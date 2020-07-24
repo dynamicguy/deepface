@@ -100,6 +100,7 @@
                         <li>The quality of the picture is low</li>
                         <li>If the person is not facing the front</li>
                         <li>Similar to the color of the face and the surrounding area</li>
+                        <li>etc..</li>
                     </ol>
                     <li>The program can detect only <b>one person</b> per image.</li>
                     <li>Accuracy is not 100%</li>
@@ -262,7 +263,7 @@
                             document.getElementById('errorbox').innerHTML = "";
                         })
                         .catch(e => {
-                            // document.getElementById("errorbox").innerHTML = error['error'];
+                            // document.getElementById("errorbox").innerHTML = e;
                             stopWaiting();
                             cleanResult();
                         })
