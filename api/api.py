@@ -5,6 +5,8 @@ import uuid
 import json
 import time
 from tqdm import tqdm
+import threading
+from queue import Queue, Empty
 
 from tensorflow.python.framework import ops
 
@@ -88,22 +90,74 @@ graph = ops.get_default_graph()
 #------------------------------
 #Service API Interface
 
+requests_queue = Queue()
+BATCH_SIZE = 1
+CHECK_INTERVAL = 0.1
+
+def handle_requests_by_batch():
+	while True:
+		requests_batch = []
+		while not (len(requests_batch) >= BATCH_SIZE):
+			try:
+				requests_batch.append(requests_queue.get(timeout=CHECK_INTERVAL))
+			except Empty:
+				continue
+			batch_outputs = []
+			for request in requests_batch:
+				if request['input'][1] == "analyze":
+					batch_outputs.append(runAnalyze(request['input'][0]))
+				else:
+					batch_outputs.append(runVerify(request['input'][0]))
+
+			for request, output in zip(requests_batch, batch_outputs):
+				request['output'] = output
+
+threading.Thread(target=handle_requests_by_batch).start()
+
 @app.route('/')
 def index():
 	return render_template('index.html')
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
-	
-	global graph
+
+	if requests_queue.qsize() >= BATCH_SIZE:
+		return jsonify({"error":'Too Many Request'}), 429
 	
 	tic = time.time()
 	req = request.get_json()
 	trx_id = uuid.uuid4()
 
-	#---------------------------
+	req_batch = {
+		'input': [req,'analyze']
+	}
+
+	requests_queue.put(req_batch)
+
+	while 'output' not in req_batch:
+		time.sleep(CHECK_INTERVAL)
 	
-	resp_obj = jsonify({'success': False})
+	resp_obj = req_batch['output']
+
+	if 'success' in resp_obj:
+		return jsonify(resp_obj), 205
+	
+	if 'error' in resp_obj:
+		return jsonify(resp_obj), 500
+
+	toc = time.time()
+	resp_obj["trx_id"] = trx_id
+	resp_obj["seconds"] = toc-tic
+
+	return jsonify(resp_obj), 200
+
+	
+def runAnalyze(req):
+
+	global graph
+	
+	#---------------------------
+
 	with graph.as_default():
 		instances = []
 		if "img" in list(req.keys()):
@@ -113,7 +167,7 @@ def analyze():
 				instances.append(item)
 		
 		if len(instances) == 0:
-			return jsonify({'success': False, 'error': 'you must pass at least one img object in your request'}), 205
+			return {'success': False, 'error': 'you must pass at least one img object in your request'}
 		
 		print("Analyzing ", len(instances)," instances")
 
@@ -124,33 +178,55 @@ def analyze():
 			actions = req["actions"]
 		
 		#---------------------------
-
+		try:
 		#resp_obj = DeepFace.analyze(instances, actions=actions)
-		resp_obj = DeepFace.analyze(instances, actions=actions, models=facial_attribute_models)
-		
+			resp_obj = DeepFace.analyze(instances, actions=actions, models=facial_attribute_models)
+		except:
+			return {'error': 'server error'}
 		#---------------------------
 
 	if 'error' in resp_obj:
-		return jsonify(resp_obj['error']), 500
+		return resp_obj['error']
 
-	toc = time.time()
-
-	resp_obj["trx_id"] = trx_id
-	resp_obj["seconds"] = toc-tic
-
-	return jsonify(resp_obj), 200
+	return resp_obj
 
 @app.route('/verify', methods=['POST'])
-
 def verify():
 	
-	global graph
+	if requests_queue.qsize() >= BATCH_SIZE:
+		return jsonify({"error":'Too Many Request'}), 429
 
 	tic = time.time()
 	req = request.get_json()
 	trx_id = uuid.uuid4()
+
+	req_batch = {
+		'input': [req,'verify']
+	}
+
+	requests_queue.put(req_batch)
+
+	while 'output' not in req_batch:
+		time.sleep(CHECK_INTERVAL)
 	
-	resp_obj = jsonify({'success': False})
+	resp_obj = req_batch['output']
+
+	if 'success' in resp_obj:
+		return jsonify(resp_obj), 205
+	
+	if 'error' in resp_obj:
+		return jsonify(resp_obj), 500
+
+	toc =  time.time()
+	
+	resp_obj["trx_id"] = trx_id
+	resp_obj["seconds"] = toc-tic
+	
+	return jsonify(resp_obj), 200
+
+def runVerify(req):
+
+	global graph
 	
 	with graph.as_default():
 		
@@ -162,7 +238,6 @@ def verify():
 			distance_metric = req["distance_metric"]
 		
 		#----------------------
-		
 		instances = []
 		if "img" in list(req.keys()):
 			raw_content = req["img"] #list
@@ -180,53 +255,46 @@ def verify():
 					validate_img2 = True
 
 				if validate_img1 != True or validate_img2 != True:
-					return jsonify({'success': False, 'error': 'you must pass both img1 and img2 as base64 encoded string'}), 205
+					return {'success': False, 'error': 'you must pass both img1 and img2 as base64 encoded string'}
 
 				instance.append(img1); instance.append(img2)
 				instances.append(instance)
-			
 		#--------------------------
 
 		if len(instances) == 0:
-			return jsonify({'success': False, 'error': 'you must pass at least one img object in your request'}), 205
-		
-		print("Input request of ", trx_id, " has ",len(instances)," pairs to verify")
+			return {'success': False, 'error': 'you must pass at least one img object in your request'}
 		
 		#--------------------------
-		
-		if model_name == "VGG-Face":
-			resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = vggface_model)
-		elif model_name == "Facenet":
-			resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = facenet_model)
-		elif model_name == "OpenFace":
-			resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = openface_model)
-		elif model_name == "DeepFace":
-			resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = deepface_model)
-		elif model_name == "DeepID":
-			resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = deepid_model)
-		elif model_name == "Ensemble":
-			models =  {}
-			models["VGG-Face"] = vggface_model
-			models["Facenet"] = facenet_model
-			models["OpenFace"] = openface_model
-			models["DeepFace"] = deepface_model
-			
-			resp_obj = DeepFace.verify(instances, model_name = model_name, model = models)
-			
-		else:
-			return jsonify({'success': False, 'error': 'You must pass a valid model name. Available models are VGG-Face, Facenet, OpenFace, DeepFace but you passed %s' % (model_name)}), 205
-		
+		try:
+			if model_name == "VGG-Face":
+				resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = vggface_model)
+			elif model_name == "Facenet":
+				resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = facenet_model)
+			elif model_name == "OpenFace":
+				resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = openface_model)
+			elif model_name == "DeepFace":
+				resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = deepface_model)
+			elif model_name == "DeepID":
+				resp_obj = DeepFace.verify(instances, model_name = model_name, distance_metric = distance_metric, model = deepid_model)
+			elif model_name == "Ensemble":
+				models =  {}
+				models["VGG-Face"] = vggface_model
+				models["Facenet"] = facenet_model
+				models["OpenFace"] = openface_model
+				models["DeepFace"] = deepface_model
+				
+				resp_obj = DeepFace.verify(instances, model_name = model_name, model = models)
+				
+			else:
+				return jsonify({'success': False, 'error': 'You must pass a valid model name. Available models are VGG-Face, Facenet, OpenFace, DeepFace but you passed %s' % (model_name)})
+		except:
+			return {'error':'serverError'}
 	#--------------------------
 	
 	if 'error' in resp_obj:
-		return jsonify(resp_obj['error']), 500
-
-	toc =  time.time()
+		return resp_obj['error']
 	
-	resp_obj["trx_id"] = trx_id
-	resp_obj["seconds"] = toc-tic
-	
-	return jsonify(resp_obj), 200
+	return resp_obj
 
 @app.route('/healthz', methods=['GET'])
 def checkHealth():
