@@ -208,6 +208,8 @@
                         
                         var second = document.getElementById("second");
                         second.innerHTML = "";
+                        var start = Date.now();
+
                         waiting();
                         cleanResult();
                         
@@ -244,6 +246,10 @@
                             if (response.status == 200){
                                 return response
                             }
+                            else if(response.status == 429){
+                                document.getElementById("errorbox").innerHTML = "Error : Too Many Requests."
+                                throw Error(response)
+                            }
                             else if(response.status == 500){
                                 document.getElementById("errorbox").innerHTML = "Error: Face could not be detection."
                                 throw Error(response)
@@ -252,7 +258,9 @@
                         .then(response => response.json())
                         .then(response => {
                             stopWaiting();
-                            second.innerHTML = "&nbsp;&nbsp; Taked time : " + response["seconds"].toFixed(2) + "s";
+                            var time = Date.now() - start;
+                            time = time/1000;
+                            second.innerHTML = "&nbsp;&nbsp; Taked time : " + time.toFixed(2) + "s";
                             if(mode == "verify"){
                                 viewVerityResult(response["pair_1"]);
                             }

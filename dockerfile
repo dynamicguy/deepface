@@ -15,11 +15,13 @@ RUN apt-get install -y libsm6 libxext6 libxrender-dev
 
 EXPOSE 80
 
-COPY . .
+COPY ./deepface ./deepface
 
 RUN mkdir /root/.deepface 
 RUN mkdir /root/.deepface/weights
 RUN mv deepface/weights/* /root/.deepface/weights/
+
+COPY . .
 
 CMD ["python","api/api.py"]
 

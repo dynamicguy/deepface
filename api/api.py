@@ -309,6 +309,6 @@ if __name__ == '__main__':
 		default=80,
 		help='Port of serving api')
 	args = parser.parse_args()
-	app.run(host='0.0.0.0', port=args.port)
+	app.run(host='0.0.0.0', port=args.port, threaded=False)
 
 
