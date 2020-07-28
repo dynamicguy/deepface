@@ -23,6 +23,11 @@ RUN mv deepface/weights/* /root/.deepface/weights/
 
 COPY . .
 
-CMD ["python","api/api.py"]
+HEALTHCHECK --interval=3m --timeout=300s CMD sh -c "if [ ! -f /tmp/health.txt ]; then touch /tmp/health.txt && python api/initRequest.py || exit 0 ; else echo \"initRequest.py already executed\"; fi"
+# HEALTHCHECK --interval=3m --timeout=300s CMD python api/initRequest.py || exit 0
+
+ENV CUDA_VISIBLE_DEVICES "0"
+
+CMD ["python", "api/api.py"]
 
 
