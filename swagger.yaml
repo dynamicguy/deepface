@@ -1,0 +1,128 @@
+openapi: 3.0.0
+
+info:
+  title: DeepFace
+  description: | 
+    This API is about DeepFace opensource project.
+   
+    DeepFace has a two function verify and analyze. 
+    
+    Verify is verifying both faces are the same person.
+    
+    Analyze is analyze emotion, race and gender with face.
+
+    You can test DeepFace in API or **[Web Server](https://deepface-woomurf.endpoint.ainize.ai/)**.
+    
+    Original Repo of project : [https://github.com/serengil/deepface](https://github.com/serengil/deepface)
+    
+    ---
+    
+      How to use:
+      * Verify
+        * Insert two image you want to verify
+        * Enter the model name (VGG-Face, Facenet, OpenFace, DeepFace, DeepID)
+        * Enter the metric (cosine, euclidean, euclidean_l2)
+        * Execute! 
+      * Analyze
+        * Insert one image you want to analyze
+        * Execute! 
+      
+
+  version: "0.0.33"
+  license: 
+    name: "MIT License"
+
+servers:
+  - url: https://deepface-woomurf.endpoint.ainize.ai/
+  
+paths:
+  /verify:
+    post:
+      requestBody:
+        required: true
+        description: | 
+            Insert image.
+            
+            Enter the model name (VGG-Face, Facenet, OpenFace, DeepFace, DeepID)
+            
+            Enter the metric (cosine, euclidean, euclidean_l2)
+            
+            [sample image1](https://raw.githubusercontent.com/woomurf/deepface/master/api/static/sample1.png)
+            
+            [sample image2](https://raw.githubusercontent.com/woomurf/deepface/master/api/static/sample2.png)
+            
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                model_name:
+                  type: string
+                  default: VGG-Face
+                distance_metric:
+                  type: string 
+                  default: cosine
+                image1:
+                  type: string
+                  format: binary
+                image2:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pair_1:
+                    type: object
+                  seconds:
+                    type: integer
+                
+        '400':
+          description: Bad Request
+          
+        '429':
+          description: Too Many Requests
+        
+        '500':
+          description: Server side error
+  /analyze:
+    post:
+      requestBody:
+        required: true
+        description:
+          Insert image you want to analyze! 
+          
+          
+          [sample image1](https://raw.githubusercontent.com/woomurf/deepface/master/api/static/sample1.png)
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                
+                image:
+                  type: string
+                  format: binary 
+      responses:
+        '200':
+          description: success
+          content:
+            application/json: 
+              schema:
+                type: object
+                properties:
+                  instance_1:
+                    type: object
+                  seconds:
+                    type: integer
+        '400':
+          description: Bad Requests
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Server Error
+      
