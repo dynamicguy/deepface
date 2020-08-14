@@ -135,7 +135,7 @@ def analyze():
 
 	image = base64.b64encode(request.files['image'].read()).decode('utf-8')
 	image = "data:image/jpeg;base64," + image
-	print(image[:20])
+
 	req_batch = {
 		'input': [image,'analyze']
 	}
@@ -214,8 +214,7 @@ def verify():
 
 	img1 = "data:image/jpeg;base64," + img1
 	img2 = "data:image/jpeg;base64," + img2
-	print('img1:',img1[:50])
-	print('img2:',img2[:50])
+	
 	model_name = request.form['model_name']
 	distance_metric = request.form['distance_metric']
 	
