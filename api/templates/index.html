@@ -119,7 +119,7 @@
                     <p><b>Select mode</b> </p>
                     <input type="radio" name="mode" value="verify" id ="verify" checked="checked" style="margin-right: 5px; margin-bottom: 10px;">
                     <label for="VGG_label">Verify : Verifying both faces are the same person. </label><br>
-                    <input type="radio" name="mode" value="analyze" id ="analyze" style="margin-right: 5px; margin-left: 10px; margin-bottom: 10px;">
+                    <input type="radio" name="mode" value="analyze" id ="analyze" style="margin-right: 5px; margin-bottom: 10px;">
                     <label for="VGG_label">Analyze : Analyze emotion, race and gender with face. </label><br>
                 </div>
                 <br>
@@ -202,7 +202,7 @@
 
                 <!-- onclick function if you want you can delete this -->
                 <script>
-                    document.getElementById("submit").onclick = async () => {
+                    document.getElementById("submit").onclick = () => {
                         
                         var second = document.getElementById("second");
                         second.innerHTML = "";
@@ -216,10 +216,10 @@
                         var data;
 
                         if(mode == "verify"){
-                            data = await get_verify_data();
+                            data = get_verify_data();
                         }
                         else{
-                            data = await get_analyze_data();
+                            data = get_analyze_data();
                         }
                         
                         if(data == null){
@@ -228,16 +228,14 @@
                         }
                         var url = "/" + mode;
 
-                        var myHeaders = new Headers();
-                        myHeaders.append("Content-Type", "application/json");
+                        // var myHeaders = new Headers();
+                        // myHeaders.append("Content-Type", "application/json");
                         
                         fetch(
                             url,
                             {
                                 method: 'POST',
-                                headers: myHeaders,
-                                body: JSON.stringify(data),
-                                redirect: "follow"
+                                body: data,
                             }
                         )
                         .then(response => {
@@ -248,9 +246,11 @@
                                 document.getElementById("errorbox").innerHTML = "Error : Too Many Requests."
                                 throw Error(response)
                             }
-                            else if(response.status == 500){
-                                document.getElementById("errorbox").innerHTML = "Error: Face could not be detection."
-                                throw Error(response)
+                            else{
+                                response.json().then(error => {
+                                    document.getElementById("errorbox").innerHTML = error;
+                                })
+                                throw Error("");
                             }
                         })
                         .then(response => response.json())
@@ -333,7 +333,7 @@
                         }
                     };
 
-                    async function get_verify_data(){
+                    function get_verify_data(){
                         var model = $("input:radio[name='model']:checked").val();
                         var method = $("input:radio[name='method']:checked").val();
 
@@ -344,38 +344,26 @@
                             document.getElementById("errorbox").innerHTML = "Please input image"
                             return null;
                         }
-
-
-                        var base64_img1 = await getBase64(input1);
-                        var base64_img2 = await getBase64(input2);
-
-                        var data = {
-                            "model_name": model, 
-                            "distance_metric": method,
-                            "img": [
-                                {
-                                "img1": base64_img1,
-                                "img2": base64_img2
-                                }   
-                            ]
-                        }
+                        
+                        var data = new FormData();
+                        data.append("model_name", model);
+                        data.append("distance_metric", method);
+                        data.append("image1", input1);
+                        data.append("image2", input2);
 
                         return data;
                     }
 
-                    async function get_analyze_data(){
+                    function get_analyze_data(){
                         var input1 = document.getElementById("input1").files[0];
                         if (input1 == undefined){
                             document.getElementById("errorbox").innerHTML = "Please input image"
                             return null;
                         }
-                        var base64_img = await getBase64(input1);
-                    
-                        var data = {
-                            "img": [
-                                base64_img,
-                            ]
-                        }
+
+                        var data = new FormData();
+                        
+                        data.append("image",input1);
 
                         return data
                     }

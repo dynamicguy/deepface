@@ -7,6 +7,9 @@ import time
 from tqdm import tqdm
 import threading
 from queue import Queue, Empty
+import base64
+import os
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 from tensorflow.python.framework import ops
 
@@ -23,6 +26,8 @@ from deepface.extendedmodels import Age, Gender, Race, Emotion
 app = Flask(__name__)
 
 #------------------------------
+
+DeepFace.allocateMemory()
 
 tic = time.time()
 
@@ -125,11 +130,14 @@ def analyze():
 		return jsonify({"error":'Too Many Request'}), 429
 	
 	tic = time.time()
-	req = request.get_json()
+	# req = request.get_json()
 	trx_id = uuid.uuid4()
 
+	image = base64.b64encode(request.files['image'].read()).decode('utf-8')
+	image = "data:image/jpeg;base64," + image
+	print(image[:20])
 	req_batch = {
-		'input': [req,'analyze']
+		'input': [image,'analyze']
 	}
 
 	requests_queue.put(req_batch)
@@ -152,19 +160,19 @@ def analyze():
 	return jsonify(resp_obj), 200
 
 	
-def runAnalyze(req):
+def runAnalyze(image):
 
 	global graph
 	
 	#---------------------------
 
 	with graph.as_default():
-		instances = []
-		if "img" in list(req.keys()):
-			raw_content = req["img"] #list
+		instances = [image]
+		# if "img" in list(req.keys()):
+		# 	raw_content = req["img"] #list
 
-			for item in raw_content: #item is in type of dict
-				instances.append(item)
+		# 	for item in raw_content: #item is in type of dict
+		# 		instances.append(item)
 		
 		if len(instances) == 0:
 			return {'success': False, 'error': 'you must pass at least one img object in your request'}
@@ -174,8 +182,8 @@ def runAnalyze(req):
 		#---------------------------
 
 		actions= ['emotion', 'age', 'gender', 'race']
-		if "actions" in list(req.keys()):
-			actions = req["actions"]
+		# if "actions" in list(req.keys()):
+		# 	actions = req["actions"]
 		
 		#---------------------------
 		try:
@@ -193,12 +201,34 @@ def runAnalyze(req):
 @app.route('/verify', methods=['POST'])
 def verify():
 	
+	print(requests_queue.qsize())
 	if requests_queue.qsize() >= BATCH_SIZE:
 		return jsonify({"error":'Too Many Request'}), 429
 
 	tic = time.time()
-	req = request.get_json()
+	# req = request.get_json()
 	trx_id = uuid.uuid4()
+
+	img1 = base64.b64encode(request.files['image1'].read()).decode('utf-8')
+	img2 = base64.b64encode(request.files['image2'].read()).decode('utf-8')
+
+	img1 = "data:image/jpeg;base64," + img1
+	img2 = "data:image/jpeg;base64," + img2
+	print('img1:',img1[:50])
+	print('img2:',img2[:50])
+	model_name = request.form['model_name']
+	distance_metric = request.form['distance_metric']
+	
+	req = {
+		'model_name': model_name,
+		'distance_metric': distance_metric,
+		'img': [
+			{
+				'img1': img1,
+				'img2': img2
+			}
+		]
+	}
 
 	req_batch = {
 		'input': [req,'verify']
@@ -302,13 +332,6 @@ def checkHealth():
 
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser()
-	parser.add_argument(
-		'-p', '--port',
-		type=int,
-		default=80,
-		help='Port of serving api')
-	args = parser.parse_args()
-	app.run(host='0.0.0.0', port=args.port, threaded=False)
+	app.run(host='0.0.0.0', port=80)
 
 
