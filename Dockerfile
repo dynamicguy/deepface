@@ -9,9 +9,10 @@ RUN apt install -y python3-pip
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 RUN python3 get-pip.py --force-reinstall
-RUN pip install deepface --no-deps
 RUN pip install -r requirements.txt
+RUN pip install deepface==0.0.33 --no-deps
 RUN apt-get install -y libsm6 libxext6 libxrender-dev
+RUN apt install libgl1-mesa-glx -y
 
 EXPOSE 80
 
